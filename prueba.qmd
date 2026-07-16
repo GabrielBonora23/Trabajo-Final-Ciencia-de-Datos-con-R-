@@ -1,0 +1,72 @@
+---
+title: "Trabajo prueba"
+format: html
+editor: visual
+---
+
+## Introducción
+
+En este trabajo nos proponemos investigar una problemática mundial, como lo son las diferencias económicas entre las distintas regiones, para ello, haremos uso de distintos instrumentos que nos provee Rstudio.
+
+Intentaremos estudiar en qué medida cada variable influye en estas diferencias regionales, utilizando herramientas de visualización como gráficos y tablas de datos.
+
+## Datos
+
+Para ello, utilizaremos el dataset "countries of the world", extraído de kaggle, que contiene información de 227 países/territorios independientes. El mismo posee 20 variables:
+
+-Pais, Region, Poblacion, Área(m2), Densidad de población (m2), Proporción de costa, Migración neta, Mortalidad infantil, PBI per cápita, tasa de alfabetización, Teléfonos (cada 1000 habitantes), Proporción de tierra fértil, Proporción de tierra cultivada, Tasa de natalidad, Mortalidad, Agricultura, Industria y Servicios.
+
+Entre ellas, destacaremos la agricultura, servicios, industria y teléfonos, dado que estas nos indicarán si existe una relación entre el desarrollo de las mismas con la problemática a estudiar.
+
+```{r, message=FALSE, warning=FALSE}
+library(ggplot2)
+library(tidymodels)
+library(tidyverse)
+library(dplyr)
+```
+
+## Cargo dataset
+
+```{r}
+paises <- read.csv("countries of the world.csv")
+```
+
+```{r}
+head(paises)
+```
+
+```{r}
+paises |> count(Region)
+```
+
+```{r}
+class(paises$GDP....per.capita.)
+```
+
+```{r}
+paises |> 
+  summarise(media_pbi = mean(GDP....per.capita., na.rm=T))
+```
+
+```{r}
+paises <- paises |> rename(Radio_costa = Coastline..coast.area.ratio.,
+                           Migracion_neta = Net.migration,
+                           Mortalidad_infantil = Infant.mortality..per.1000.births.,
+                      Alfabetizacion = Literacy....,
+                      Telefonos = Phones..per.1000.)
+                           
+paises
+
+```
+
+```{r}
+paises |> group_by(Region) |> 
+  summarise(PBI = mean(GDP....per.capita., na.rm = T)) |> 
+  ggplot(aes(x = reorder(Region, PBI), y = PBI, fill = Region)) +
+                   geom_col() + 
+coord_flip() + labs(title = "PBI per cápita según región", 
+                    x = "PBI per cápita", y = "Región") + 
+  theme(legend.position = "none")
+                     
+  
+```
