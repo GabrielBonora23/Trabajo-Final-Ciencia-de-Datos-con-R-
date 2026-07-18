@@ -4,7 +4,6 @@ library(tidyverse)
 library(tidymodels)
 library(ggplot2)
 library(dplyr)
-library(viridis)
 library(plotly)
 
 
@@ -64,6 +63,10 @@ paises[columnas] <- lapply(paises[columnas], function(x) {
 
 
 
+#Cantidad de países por región
+paises |> count(Region)
+
+
 #Pbi per cápita promedio según región.
 
 paises |> group_by(Region) |> 
@@ -82,28 +85,7 @@ paises |> slice_max(PBI_percapita, n = 10) |>
 #Los 10 con menos PBI per cápita
 paises |> slice_min(PBI_percapita, n =10) |> 
   select(Region, PBI_percapita)
-
-#Gráfico interactivo de alfabetización según PBI per cápita, coloreado por región
-
-
-grafico <- paises |> ggplot(aes(x = PBI_percapita, y = Alfabetizacion, colour = Region)) +
-  geom_point(alpha = 0.4, size = 3
-             ) + labs(
-    title = "Alfabetización según PBI per cápita") + 
-  scale_colour_manual(values = c(
-    "red","blue", "green", "orange", "purple", "brown", "black", "cyan",
-    "magenta", "yellow", "darkgreen"))
-   
-ggplotly(grafico)             
-
-#Relación entre natalidad y PBI per cápita
-
-paises |> ggplot(aes(x = Natalidad, y =PBI_percapita,
-                     colour = "red")) + 
-  geom_point(alpha = 0.7, size = 3) + labs(
-    title = "Relación entre Natalidad y PBI per cápita")
-
-#Distribución de la mortalidad infantil según categoría del PBI per cápita
+           
 
 #Busco distribuir "equitativamente" las categorías
 
@@ -120,14 +102,160 @@ paises <- paises |> mutate(Categoria_PBI = factor(
   Categoria_PBI, levels = c("Bajo", "Medio", "Alto")
 )) 
 
-#Gráfico de mortalidad infantil según PBI per cápita
-paises |> filter(!is.na(Categoria_PBI)) |> 
-  ggplot(aes(x = Mort_infantil)) +
-  geom_histogram(bins = 20, colour = "white", fill = "purple") +
-  facet_wrap(~Categoria_PBI) + labs(
-    title = "Mortalidad infantil según PBI per cápita",
-    x = "Mortalidad infantil")
+
+
+#Natalidad por región
+paises |> group_by(Region) |> 
+  summarise(media_natalidad = mean(Natalidad, na.rm = T),
+            desvio_natalidad = sd(Natalidad, na.rm = T)) 
+ 
+  
+paises |> ggplot(aes(x = Natalidad, y =  Pais, colour  = Region
+                                            )) + 
+  geom_point(alpha = 0.7, size = 2) + labs(
+    title = "Natalidad por Región") + facet_wrap(~Region)+
+  theme(
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    axis.title.y = element_blank(),
+    legend.position = "none"
+  )
+
+
+#¿Mayor dispersión en natalidad implica mayor dispersión en PBI pc?
+
+#Mortalidad por región
+paises |> group_by(Region) |> 
+  summarise(media_mortalidad = mean(Mortalidad, na.rm = T),
+            desvio_mortalidad = sd(Mortalidad, na.rm = T)) 
+
+
+paises |> ggplot(aes(x = Mortalidad, y =  Pais, colour  = Region
+)) + 
+  geom_point(alpha = 0.7, size = 2) + labs(
+    title = "Mortalidad por Región") + facet_wrap(~Region)+
+  theme(
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    axis.title.y = element_blank(),
+    legend.position = "none"
+  )
+
+#Relación entre Mortalidad y Mortalidad infantil
+
+paises |> ggplot(aes(x = Mortalidad, y = Mort_infantil, colour = Region)) +
+  geom_point(size=2, alpha = 0.7) + facet_wrap(~Region)
+ 
+
+#Alfabetización por región
+
+
+paises |> group_by(Region) |> 
+  summarise(media_alfabetizacion = mean(Alfabetizacion, na.rm = T),
+            desvio_alfabetizacion = sd(Alfabetizacion, na.rm = T)) 
+
+
+paises |> ggplot(aes(x = Alfabetizacion, y =  Pais, colour  = Region
+)) + 
+  geom_point(alpha = 0.7, size = 2) + labs(
+    title = "Alfabetización por Región") + facet_wrap(~Region)+
+  theme(
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    axis.title.y = element_blank(),
+    legend.position = "none"
+  )
 
 
 
 
+#Shiny
+
+library(shiny)
+
+ui <- fluidPage(
+  titlePanel("Hola"),
+  sidebarLayout(
+    sidebarPanel(
+      sliderInput("n", "Cantidad de datos", min = 10, max = 50, value = 20)
+    ),
+    mainPanel(
+      plotOutput("histograma"))
+  )
+) 
+
+server <- function(input, output) {
+  output$histograma <- renderPlot({
+    hist(rnorm(input$n))
+  })
+}
+
+shinyApp(ui, server) 
+
+
+library(shiny)
+library(ggplot2)
+
+ui <- fluidPage(
+  
+  titlePanel("Relación entre variables y PBI"),
+  
+  sidebarLayout(
+    
+    sidebarPanel(
+      selectInput(
+        "variable",
+        "Seleccione una variable:",
+        choices = c(
+          "Natalidad",
+          "Mortalidad",
+          "Agricultura",
+          "Industria",
+          "Servicios",
+          "Alfabetizacion",
+          "Telefonos",
+          "Migracion",
+          "Mort_infantil"
+          
+        )
+      ), checkboxGroupInput(
+        "region",
+        "Seleccione las regiones:",
+        choices = unique(paises$Region),
+        selected = unique(paises$Region)
+      )
+    ),
+    
+    mainPanel(
+      plotlyOutput("grafico")
+    )
+  )
+)
+
+server <- function(input, output) {
+  
+  output$grafico <- renderPlotly({
+    datos_filtrados <- paises |>
+      dplyr::filter(Region %in% input$region)
+    
+  g <- ggplot(datos_filtrados,
+           aes(x = .data[[input$variable]], y = PBI_percapita, colour = Region,
+               text = paste(
+                 "País:", Pais
+               ))) +
+      geom_point(alpha = 0.6, size = 3) + 
+      scale_colour_manual(values = c(
+        "red","blue", "green", "orange", "purple", "brown", "black", "cyan",
+        "magenta", "yellow", "darkgreen")) +
+      labs(
+        x = input$variable,
+        y = "PBI per cápita",
+        title = paste("PBI vs", input$variable)
+      ) +
+      theme_minimal()
+ ggplotly(g)   
+  })
+  
+}
+
+shinyApp(ui, server)
