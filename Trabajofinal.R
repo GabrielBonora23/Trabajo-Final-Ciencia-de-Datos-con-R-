@@ -5,6 +5,7 @@ library(tidymodels)
 library(ggplot2)
 library(dplyr)
 library(plotly)
+library(shiny)
 
 
 #Cargo los datos
@@ -87,23 +88,6 @@ paises |> slice_min(PBI_percapita, n =10) |>
   select(Region, PBI_percapita)
            
 
-#Busco distribuir "equitativamente" las categorías
-
-quantile(paises$PBI_percapita, probs = c(0.333, 0.667), na.rm = T)
-
-#Determino las categorías
-paises <- paises|>
-  mutate(Categoria_PBI = case_when(PBI_percapita < 2885 ~ "Bajo",
-                    PBI_percapita >= 2885 & PBI_percapita<= 10230 ~ "Medio",
-                    PBI_percapita > 10230 ~ "Alto"))
-
-#Ordeno las categorías para mostrar en el gráfico
-paises <- paises |> mutate(Categoria_PBI = factor(
-  Categoria_PBI, levels = c("Bajo", "Medio", "Alto")
-)) 
-
-
-
 #Natalidad por región
 paises |> group_by(Region) |> 
   summarise(media_natalidad = mean(Natalidad, na.rm = T),
@@ -155,6 +139,17 @@ paises |> group_by(Region) |>
             desvio_alfabetizacion = sd(Alfabetizacion, na.rm = T)) 
 
 
+#Busco distribuir "equitativamente" las categorías de PBI per cápita
+
+quantile(paises$PBI_percapita, probs = c(0.333, 0.667), na.rm = T)
+
+#Determino las categorías
+paises <- paises|>
+  mutate(Categoria_PBI = case_when(PBI_percapita < 2885 ~ "Bajo",
+                                   PBI_percapita >= 2885 & PBI_percapita<= 10230 ~ "Medio",
+                                   PBI_percapita > 10230 ~ "Alto"))
+
+
 paises |> ggplot(aes(x = Alfabetizacion, y =  Pais, colour  = Region
 )) + 
   geom_point(alpha = 0.7, size = 2) + labs(
@@ -171,30 +166,46 @@ paises |> ggplot(aes(x = Alfabetizacion, y =  Pais, colour  = Region
 
 #Shiny
 
-library(shiny)
+#Tabla "básica" del dataframe
 
 ui <- fluidPage(
-  titlePanel("Hola"),
-  sidebarLayout(
-    sidebarPanel(
-      sliderInput("n", "Cantidad de datos", min = 10, max = 50, value = 20)
+  titlePanel("Países del mundo : Tabla"),
+  
+  fluidRow(
+    column(3, 
+           selectInput("reg",
+                       "Region:",
+                       c("Todas",
+                         unique(as.character(paises$Region))))
     ),
-    mainPanel(
-      plotOutput("histograma"))
-  )
-) 
+    column(3,
+           selectInput("pbi",
+                       "Nivel de PBI:",
+                       c("Todos", unique(as.character(
+                         paises$Categoria_PBI[!is.na(paises$Categoria_PBI)]))))
+    )),
+  DT::dataTableOutput("tabla"))
 
-server <- function(input, output) {
-  output$histograma <- renderPlot({
-    hist(rnorm(input$n))
-  })
+
+server <- function(input,output) {
+  output$tabla <- DT::renderDataTable(DT::datatable({
+    datos <- paises
+    if(input$reg !="Todas") {
+      datos <- datos[datos$Region == input$reg,]
+    }
+    if(input$pbi != "Todos") {
+      datos <- datos[datos$Categoria_PBI == input$pbi,]
+    }
+    datos
+    
+  }, options = list(scrollX = T) #Añade una barra deslizadora para las columnas
+  ))
 }
 
-shinyApp(ui, server) 
+shinyApp(ui, server)
 
 
-library(shiny)
-library(ggplot2)
+#Relación de las distintas variables con el PBI per cápita.
 
 ui <- fluidPage(
   
@@ -205,22 +216,14 @@ ui <- fluidPage(
     sidebarPanel(
       selectInput(
         "variable",
-        "Seleccione una variable:",
-        choices = c(
-          "Natalidad",
-          "Mortalidad",
-          "Agricultura",
-          "Industria",
-          "Servicios",
-          "Alfabetizacion",
-          "Telefonos",
-          "Migracion",
-          "Mort_infantil"
-          
+        "Seleccionar variable:",
+        choices = c("Natalidad", "Mortalidad", "Agricultura", "Industria",
+                    "Servicios", "Telefonos", "Migracion",
+                    "Mort_infantil"
         )
       ), checkboxGroupInput(
         "region",
-        "Seleccione las regiones:",
+        "Seleccionar regiones:",
         choices = unique(paises$Region),
         selected = unique(paises$Region)
       )
@@ -243,7 +246,7 @@ server <- function(input, output) {
                text = paste(
                  "País:", Pais
                ))) +
-      geom_point(alpha = 0.6, size = 3) + 
+      geom_point(alpha = 0.6, size = 2.5) + 
       scale_colour_manual(values = c(
         "red","blue", "green", "orange", "purple", "brown", "black", "cyan",
         "magenta", "yellow", "darkgreen")) +
@@ -259,4 +262,4 @@ server <- function(input, output) {
 }
 
 shinyApp(ui, server)
-s
+

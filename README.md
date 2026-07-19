@@ -9,8 +9,8 @@ utilizando herramientas de visualización como gráficas o tablas de datos,
 
 #Datos
 Para ello, utilizaremos el dataset "countries of the world", extraído de kaggle,
-que contiene información de 227 países/territorios independientes. El mismo posee
-20 variables, de las cuáles utilizaremos 18:
+que contiene información de 227 países/territorios independientes en el año 2007.
+El mismo posee 20 variables, de las cuáles utilizaremos 18:
 
 -País
 -Región
@@ -30,4 +30,7 @@ que contiene información de 227 países/territorios independientes. El mismo po
 -Agricultura
 -Industria
 -Servicios
+
+A su vez, añadiremos una categoría adicional al PBI, que diferencia entre
+niveles "Bajo", "Medio" y "Alto"
 
