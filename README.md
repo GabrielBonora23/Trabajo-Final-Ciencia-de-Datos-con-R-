@@ -32,5 +32,5 @@ El mismo posee 20 variables, de las cuáles utilizaremos 18:
 -Servicios
 
 A su vez, añadiremos una categoría adicional al PBI, que diferencia entre
-niveles "Bajo", "Medio" y "Alto"
+niveles "Bajo", "Medio" y "Alto".
 
