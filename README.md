@@ -13,6 +13,7 @@ que contiene información de 227 países/territorios independientes en el año 2
 El mismo posee 20 variables, de las cuáles utilizaremos 18:
 
 -País
+
 -Región
 -Población
 -Área (en metros cuadrados)
