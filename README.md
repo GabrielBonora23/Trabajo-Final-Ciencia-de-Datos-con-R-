@@ -1,10 +1,10 @@
 # Trabajo-Final-Ciencia-de-Datos-con-R-
 
-#Introducción
+#**Introducción**
 En este trabajo analizaremos una problemática mundial: las diferencias económicas existentes entre las distintas regiones del planeta. Para ello, utilizaremos un conjunto de datos que reúne información demográfica, social y económica de numerosos países, con el objetivo de identificar patrones y relaciones que permitan entender mejor las causas de estas desigualdades.
 
 
-#Datos
+## Datos
 Para llevar a cabo el análisis, usaremos herramientas disponibles en RStudio, en particular, construiremos tablas, gráficos y aplicaciones interactivas que faciliten la exploración de la información desde diferentes perspectivas.
 Para ello, utilizaremos el dataset "countries of the world", extraído de kaggle,
 que contiene información de 227 países/territorios independientes en el año 2007.
