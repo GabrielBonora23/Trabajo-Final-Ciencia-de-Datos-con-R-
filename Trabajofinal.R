@@ -88,6 +88,13 @@ paises |> slice_min(PBI_percapita, n =10) |>
   select(Region, PBI_percapita)
            
 
+#Desvío y media del PBI per cápita por región
+paises |> group_by(Region) |>
+  summarise(prom_pbi = mean(PBI_percapita, na.rm = T),
+            desv_pbi = sd(PBI_percapita, na.rm = T))
+                            
+
+
 #Natalidad por región
 paises |> group_by(Region) |> 
   summarise(media_natalidad = mean(Natalidad, na.rm = T),
@@ -130,6 +137,8 @@ paises |> ggplot(aes(x = Mortalidad, y =  Pais, colour  = Region
 paises |> ggplot(aes(x = Mortalidad, y = Mort_infantil, colour = Region)) +
   geom_point(size=2, alpha = 0.7) + facet_wrap(~Region)
  
+#Esto muestra que, a pesar de que la mortalidad es mayor en los países del oeste de Europa, esto se debe a que la población está mas envejecida, y no necesariamene implica "falta de recursos"
+
 
 #Alfabetización por región
 
@@ -157,9 +166,9 @@ paises |> ggplot(aes(x = Alfabetizacion, y =  Pais, colour  = Region
   theme(
     axis.text.y = element_blank(),
     axis.ticks.y = element_blank(),
-    axis.title.y = element_blank(),
+    axis.title.y = element_blank(),  
     legend.position = "none"
-  )
+  ) #Elimina los textos del gráfico
 
 
 
@@ -244,7 +253,7 @@ server <- function(input, output) {
   g <- ggplot(datos_filtrados,
            aes(x = .data[[input$variable]], y = PBI_percapita, colour = Region,
                text = paste(
-                 "País:", Pais
+                 "País:", Pais #Añade el nombre del país en el plotly
                ))) +
       geom_point(alpha = 0.6, size = 2.5) + 
       scale_colour_manual(values = c(
@@ -264,3 +273,57 @@ server <- function(input, output) {
 shinyApp(ui, server)
 
 s
+
+
+#Promedio de cada variable por región.
+
+paises_prom <- paises |> group_by(Region) |> 
+  summarise(across(c(Poblacion, Area, Densidad_pob,Proporcion_costa, Migracion,
+                     Mort_infantil, Mortalidad, Natalidad,PBI_percapita, Alfabetizacion,
+                     Telefonos, Agricultura, Servicios, Industria), mean,
+                   na.rm = T))
+          
+#Shiny de los promedios por región 
+
+ui <- fluidPage(
+  titlePanel("Promedios por región : Mapa de calor"),
+  sidebarLayout(
+    sidebarPanel(
+      checkboxGroupInput(   #Permite seleccionar varias variables
+        "variable", "Seleccionar variable:",
+        choices = c("Poblacion", "Area", "Densidad_pob", "Proporcion_costa",
+                    "Migracion", "Mort_infantil", "Mortalidad", "Natalidad",
+                    "PBI_percapita", "Alfabetizacion", "Telefonos",
+                    "Agricultura", "Servicios", "Industria")
+      )
+      
+    ), mainPanel(plotOutput("Grafico")
+      
+    )))
+  
+server <- function(input, output) {
+  output$Grafico <- renderPlot({
+    datos <- paises_prom
+    datos <- datos |> 
+      dplyr:: select(Region, dplyr::all_of(input$variable)) #Selecciona región y las variables elegidas
+    
+    datos <- datos |> mutate(dplyr::across(-Region,
+                                           scale)) #Elimina región y estandariza los valores
+    
+    datos <- datos |> tidyr::pivot_longer(
+      cols = -Region,
+      names_to = "Variable",
+      values_to = "Valor"
+    ) #"Alarga" la tabla
+    
+    ggplot(datos, aes(x = Variable, y = Region, fill = Valor)) +
+      geom_tile() +  #Mapa de calor
+      geom_text(aes(label = round(Valor,2))) +  #Añade el número redondeando el valor
+      scale_fill_gradient(low = "white", high = "red")
+  })
+}
+
+shinyApp(ui, server)
+
+
+
