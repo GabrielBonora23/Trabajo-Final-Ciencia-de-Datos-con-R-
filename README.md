@@ -7,6 +7,8 @@ instrumentos que posee Rstudio.
 Intentaremos estudiar en qué medida influye cada variable en estas diferencias regionales,
 utilizando herramientas de visualización como gráficas o tablas de datos,
 
+
+
 #Datos
 Para ello, utilizaremos el dataset "countries of the world", extraído de kaggle,
 que contiene información de 227 países/territorios independientes en el año 2007.
@@ -15,23 +17,37 @@ El mismo posee 20 variables, de las cuáles utilizaremos 18:
 -País
 
 -Región
+
 -Población
--Área (en metros cuadrados)
--Densidad de población (en metros cuadrados)
+
+-Área (m^2)
+
+-Densidad de población (m^2)
+
 -Proporción de costa
--Migración
+
+-Migración(Positivo -> la gente migra a ese país, Negativo->La gente migra del País)
+
 -Mortalidad infantil (cada 1000 nacimientos)
+
 -PBI per cápita
+
 -Tasa de alfabetización
+
 -Cantidad de teléfonos (cada 1000 habitantes)
+
 -Proporción de tierrra fértil
+
 -Proporción de tierra cultivada
+
 -Tasa de natalidad
+
 -Tasa de mortalidad
+
 -Agricultura
 -Industria
--Servicios
+-Servicios(Se miden en la proporción que aportan al PBI de la Nación)
 
-A su vez, añadiremos una categoría adicional al PBI, que diferencia entre
+A su vez, añadiremos "Categoria_PBI), que diferencia entre tres
 niveles "Bajo", "Medio" y "Alto".
 
