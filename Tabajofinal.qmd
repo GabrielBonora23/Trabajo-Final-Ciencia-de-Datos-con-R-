@@ -1,0 +1,225 @@
+---
+title: "Trabajo Final"
+author: "DG.GB"
+format: html
+code-fold: true
+code-summary: "Mostrar Código"
+editor: visual
+---
+
+## Librerias
+
+```{r,message=FALSE,warning=FALSE}
+library(tidyverse)
+library(tidymodels)
+library(ggplot2)
+library(dplyr)
+library(plotly)
+library(shiny)
+library(kableExtra)
+```
+
+## Datos
+
+```{r}
+paises <- read.csv("countries of the world.csv")
+
+paises |>  
+  knitr::kable(align = "c") |>
+  kableExtra::kable_styling(
+    position = "center",
+    full_width = FALSE) |>  
+  kableExtra::scroll_box(
+    height = "500px")
+```
+
+## Datos Arreglados
+
+```{r,warning=FALSE,message=FALSE}
+paises <- paises |> 
+  rename(Pais = Country,
+         Poblacion = Population,
+         Area = Area..sq..mi..,
+         Densidad_pob = Pop..Density..per.sq..mi..,
+         Prop_costa = Coastline..coast.area.ratio.,
+         Migracion = Net.migration,
+         Mort_infantil = Infant.mortality..per.1000.births.,
+         PBI_percapita = GDP....per.capita.,
+         Alfabetizacion = Literacy....,
+         Telefonos = Phones..per.1000.,
+         Tierra_fertil = Arable....,
+         Cultivos = Crops....,
+         Natalidad = Birthrate,
+         Mortalidad = Deathrate,
+         Agricultura = Agriculture,
+         Industria = Industry,
+         Servicios = Service) #Renombramos las Variables de Interés al Español
+
+paises <- paises |> select(-Other...., -Climate) #Eliminamos variables de no Interés
+
+paises[] <- lapply(paises, function(x) {
+  if (is.character(x)) {y <- gsub(",", ".", trimws(x))
+    suppressWarnings({z <- as.numeric(y)})
+    if (all(is.na(z) == is.na(y))) z else x} else {x}}) #Cambiamos de comas a puntos
+
+columnas <- c("Migracion", "Mort_infantil", "Alfabetizacion", "Telefonos", 
+              "Tierra_fertil", "Cultivos", "Natalidad", "Mortalidad", "Agricultura"               ,"Industria", "Servicios")
+
+paises[columnas] <- lapply(paises[columnas], function(x) {
+  x <- trimws(x) #Elimina espacios, ej: " 0,36 " a "0,36"
+  x[x==""] <- NA #Sustituye columnas vacías por NA
+  x <- gsub(",", ".", x) #Sustituye comas por puntos
+  as.numeric(x) #Convierte los valores de caracter a numéricos
+  })
+
+paises <- paises |>
+  mutate(
+    Categoria_PBI = case_when(
+      PBI_percapita < quantile(PBI_percapita, 0.333, na.rm = TRUE) ~ "Bajo",
+      PBI_percapita <= quantile(PBI_percapita, 0.667, na.rm = TRUE) ~ "Medio",
+      TRUE ~ "Alto"
+    )
+  )
+
+
+
+paises |>  
+  knitr::kable(align = "c") |>
+  kableExtra::kable_styling(
+    position = "center",
+    full_width = FALSE) |>  
+  kableExtra::scroll_box(
+    height = "500px") #Observamos la tabla con los nuevos datos arreglados
+```
+
+## Cantidad de Paises por región
+
+```{r}
+paises |> 
+  count(Region) |> 
+  kable(col.names = c("Región", "Cantidad de países")) |> 
+  kable_styling(bootstrap_options = "striped",
+                full_width = FALSE)
+```
+
+# Problemática a Estudiar:El PBI Per Cap por Regíon
+
+```{r}
+paises |> group_by(Region) |> 
+  summarise(PBI = mean(PBI_percapita, na.rm = T)) |> 
+  ggplot(aes(x = reorder(Region, PBI), y = PBI, fill = Region)) +
+  geom_col() + 
+  theme_bw()+
+  coord_flip() + labs(title = "PBI per cápita según región", 
+                      x = "PBI per cápita", y = "Región") + 
+  theme(legend.position = "none") 
+```
+
+## Top 10 Paises más Ricos en PBI_Per_Cap
+
+```{r}
+paises |> slice_max(PBI_percapita, n = 10) |> 
+  select(Pais,Region, PBI_percapita) |> 
+  kable(col.names = c("País", "Región", "PBI_Per_Cap")) |> 
+  kable_styling(bootstrap_options = "striped",
+                full_width = FALSE)
+```
+
+## Top 10 Paises más Pobres en PBI_Per_Cap
+
+```{r}
+paises |> slice_min(PBI_percapita, n =10) |> 
+  select(Pais,Region, PBI_percapita) |> 
+  kable(col.names = c("País", "Región", "PBI_Per_Cap")) |> 
+  kable_styling(bootstrap_options = "striped",
+                full_width = FALSE)
+```
+
+# ¿A Qué se debe la Diferencia entre las Regiones?
+
+## 
+
+## 
+
+# Variables de Interés de Estudio Previo
+
+## 2.1 Natalidad
+
+```{r,warning=FALSE}
+paises |> group_by(Region) |> 
+  summarise(media_natalidad = mean(Natalidad, na.rm = T),
+            desvio_natalidad = sd(Natalidad, na.rm = T)) |>  
+  kable(col.names = c("Región", "Media_Natalidad", "Desvío_Natalidad")) |> 
+  kable_styling(bootstrap_options = "striped",
+                full_width = FALSE)
+ 
+  
+paises |> ggplot(aes(x = Natalidad, y =  Pais, colour  = Region
+                                            )) + 
+  geom_point(alpha = 0.7, size = 2) + labs(
+    title = "Natalidad por Región") + facet_wrap(~Region) +
+  theme(
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    axis.title.y = element_blank(),
+    legend.position = "none")
+```
+
+## 2.2 Mortalidad
+
+```{r,warning=FALSE,message=FALSE}
+paises |> group_by(Region) |> 
+  summarise(media_mortalidad = mean(Mortalidad, na.rm = T),
+            desvio_mortalidad = sd(Mortalidad, na.rm = T)) |> 
+   kable(col.names = c("Región", "Media_Mortalidad", "Desvío_Mortalidad")) |> 
+  kable_styling(bootstrap_options = "striped",
+                full_width = FALSE)
+
+paises |> ggplot(aes(x = Mortalidad, y =  Pais, colour  = Region)) + 
+  geom_point(alpha = 0.7, size = 2) +
+  labs(title = "Mortalidad por Región") + facet_wrap(~Region) +
+  theme(axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.title.y = element_blank(),
+        legend.position = "none")
+
+paises |> ggplot(aes(x = Mortalidad, y = Mort_infantil, colour = Region)) +
+  geom_point(size=2, alpha = 0.7) + facet_wrap(~Region) + theme_gray() +
+  theme(
+    panel.background = element_rect(fill = "white", colour = NA),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.position = "none"
+)
+```
+
+## 2.3 Alfabetización
+
+```{r,warning=FALSE}
+paises |> group_by(Region) |> 
+  summarise(media_alfabetizacion = mean(Alfabetizacion, na.rm = T),
+            desvio_alfabetizacion = sd(Alfabetizacion, na.rm = T)) |>
+  kable(col.names = c("Región", "Media_Alfabetización", "Desvío_Alfabetización")) |> 
+  kable_styling(bootstrap_options = "striped",
+                full_width = FALSE)
+
+paises |> ggplot(aes(x = Alfabetizacion, y =  Pais, colour  = Region)) + 
+  geom_point(alpha = 0.7, size = 2) + labs(
+    title = "Alfabetización por Región") + facet_wrap(~Region)+
+  theme(
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    axis.title.y = element_blank(),
+    legend.position = "none")
+
+```
+
+## 
+
+# Conclusiones(Post Shiny)
+
+A partir de las visualizaciones, tablas y medidas de resumen calculadas, es posible identificar tendencias generales, diferencias entre grupos y posibles relaciones entre las variables analizadas.
+
+Los resultados obtenidos muestran que los datos presentan mucha variabilidad por región, las características estudiadas no se distribuyen de manera uniforme entre las observaciones. El análisis gráfico permite detectar comportamientos relevantes, si bien correlacion no implica causalidad, el desarrollo de las regiones hacia los sectores de servicios genera mas observaciones de PBI per Cápita alto, mientras que la Agricultura es el contrario y la industria se mantiene neutral. Tambien hubieron variables que creiamos mas relevantes como la Migración que terminaron no siendo determinantes, y sorprendieron los casos de Mortalidad Infantil y Telefonos por cada 1000 habitantes, siendo las mas correlacionadas con nuestra variable de estudio..
+
+En conclusión, el análisis realizado podría permitirnos responder que la diferencia entre las Regiones se debe a varios factores que al implementarse llevan a un PBI Per Cápita mayor, una alta alfabetización, Trabajo centralizado en areas de Manufactureo y venta de servicos, Ignovación tecnológica, Indices de Salud favorables,etc.
