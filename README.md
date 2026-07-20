@@ -40,12 +40,9 @@ El mismo posee 20 variables, de las cuáles utilizaremos 18:
 
 #### -Tasa de mortalidad
 
-#### -Agricultura
--Industria
--Servicios(Se miden en la proporción que aportan al PBI de la Nación)
+#### -Agricultura-Industria-Servicios (Se miden en la proporción que aportan al PBI de la Nación)
 
-#### A su vez, añadiremos "Categoria_PBI), que diferencia entre tres
-niveles "Bajo", "Medio" y "Alto".
+#### A su vez, añadiremos "Categoria_PBI), que diferencia entre tres niveles "Bajo", "Medio" y "Alto".
 
 
 ### Este trabajo buscará determinar en qué medida las variables se relacionan con el Producto Bruto Interno (PBI) per cápita. También, se realizará una comparación entre regiones para identificar similitudes y diferencias en sus indicadores, permitiendo reconocer cuáles presentan un mejor desempeño relativo y cuáles mayores desafíos en términos de desarrollo, con el fin de complementar el análisis visual.
